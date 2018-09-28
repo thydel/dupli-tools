@@ -41,8 +41,8 @@ fulls = find $(path) -type f -name $(pattern) $(CMP) -newermt $(lastkeep)
 trace = $(and $(DEBUG), | tee -a ~/tmp/$(dupli)-trace)
 
 date  = $(fulls) $(trace)
-date += | xargs -r ls -t | head -1 | xargs -ri stat -c %Y {} $(trace)
-date += | xargs -ri echo expr {} $(if $(CMP),-,+) 1 | dash $(trace)
+date += | xargs -r ls -t | $(if $(CMP),head,tail) -1 | xargs -ri stat -c %Y {} $(trace)
+date += | xargs -ri echo expr {} - $(if $(CMP),1,0) | dash $(trace)
 
 find  = xargs -ri find $(path) -type f $(CMP) -newermt '@{}'
 files = $(date) | $(find)
