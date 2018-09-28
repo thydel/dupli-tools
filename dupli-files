@@ -9,7 +9,7 @@ $(self) := $(basename $(self))
 dupli   := $(notdir $(self))
 $(self):;
 
-cmds  := help raw size list sets fulls
+cmds  := help raw size list base fulls
 opts  := short newer info verb debug
 
 weeks ?= 12
@@ -52,7 +52,7 @@ Info  := echo $(path) $(lastkeep) is $(weeks) weeks ago
 
 raw  = $(files)
 size = $(files) | xargs -r du -scBG | cut -f1 | tail -1 | tr '\n' '\t' | sed -e 's;G	; ;' | xargs -ri echo {}$(set)
-sets = $(files) | $(Short) | cut -d/ -f 1-2 | uniq
+base = $(files) | $(Short) | cut -d/ -f 1-2 | uniq
 list = $(files) | xargs -r ls -lt $(SHORT)
 
 $(cmds):; @$(INFO)$($@)
@@ -82,7 +82,7 @@ echo 'use cmd "raw" for bare full path list'
 echo 'use cmd "list" for sorted "ls(1) -lt"'
 echo '         option "short" suppress store prefix'
 echo 'use cmd "size" to get the total size of selected files'
-echo 'use cmd "sets" to reduce output to <node>/<vol> when selected file set is not empty'
+echo 'use cmd "base" to reduce output to <node>/<vol> when selected file set is not empty'
 echo 'use cmd "full" to see all full starting points'
 echo
 echo 'use option info to show <node>/<vol> and date for "weeks"'
