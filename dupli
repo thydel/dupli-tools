@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+
+MAKEFLAGS += -Rrs
+SHELL != which bash
+
+include /usr/local/etc/dupli-common.mk
+
+$(if $(MAKECMDGOALS),,$(error dupli help))
+cmd := $(word 1, $(MAKECMDGOALS))
+$(if $(filter $(cmd), $(cmds)),,$(error dupli: $(cmd) is not a command. See dupli help))
+args := $(wordlist 2, 99, $(MAKECMDGOALS))
+
+$(cmds):; -dupli-$@ $(args)
+.DEFAULT:; @:
+.PHONY: $(MAKECMDGOALS)

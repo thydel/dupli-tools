@@ -1,0 +1,85 @@
+#!/usr/bin/make -f
+
+MAKEFLAGS += -Rr
+SHELL != which bash
+
+self    := $(lastword $(MAKEFILE_LIST))
+$(self) := $(basename $(self))
+dupli   := $(notdir $(self))
+$(self):;
+
+opts := list sum rev
+cmds := help all small medium big
+
+see := See $(dupli) help
+
+error.1.tst := $(filter-out $(opts) $(cmds), $(MAKECMDGOALS))
+error.1.msg := $(dupli): $(error.1.tst) is neither an option nor a command. $(see)
+errors += 1
+
+error.2.tst := $(if $(filter $(opts), $(MAKECMDGOALS)),$(if $(filter $(cmds), $(MAKECMDGOALS)),,T))
+error.2.msg := $(dupli): option whithout command. $(see)
+errors += 2
+
+$(foreach _,$(errors),$(if $(error.$_.tst),$(error $(error.$_.msg))))
+
+.DEFAULT_GOAL := all
+
+store := /var/local/duplicity/store
+
+sets  = proot -w $(store) find -mindepth 2 -maxdepth 2 -type d
+sets += | proot -w $(store) xargs -r du -sBG | sort -n$(REV) | sed -e 's;G	./; ;'
+
+max_small  := 9
+max_medium := 99
+
+all    = $(sets)
+small  = $(sets) | awk '$$1 <= $(max_small)'
+medium = $(sets) | awk '$$1 > $(max_small) && $$1 <= $(max_medium)'
+big    = $(sets) | awk '$$1 > $(max_medium)'
+
+$(cmds):; @$($@) $(opts.cmd)
+.PHONY: $(cmds)
+
+list.cmd := cut -d' ' -f2
+sum.cmd  := awk '{ s += $$1; print } END { print s }'
+opts.cmd  = $(if $(SUM), | $(sum.cmd),$(if $(LIST), | $(list.cmd)))
+
+list := LIST := T
+sum  := SUM := T
+REV  := r
+rev  := REV :=
+
+$(opts):; @: $(eval $($@))
+
+space :=
+space +=
+
+opts.help := $(foreach _,$(opts),[$_])
+cmds.help := [$(subst $(space),|,$(cmds))]
+
+define help
+echo
+echo '$(dupli) $(opts.help) $(cmds.help)'
+echo
+echo 'list sets of volumes (<node>/<vol>) by size segment'
+echo 'use cmd'
+echo -e '\t"small"  to list vol <= $(max_small)G'
+echo -e '\t"medium" to list vol > $(max_small)G && <= $(max_medium)G'
+echo -e '\t"big"    to list vol > $(max_medium)G'
+echo -e '\t"all"    to list all vol'
+echo
+echo 'default to list "all" volumes'
+echo 'default to list reverse sorted by size'
+echo 'default to show size and volume'
+echo
+echo 'use option "list" to show volume only (to pipe to other dupli module)'
+echo 'use option "rev" to reverse sort (lower first)'
+echo 'use option "sum" to sum all volume size'
+echo
+echo 'options must precede cmd'
+echo 'when using options cmd is required'
+echo
+endef
+
+.PHONY: $(cmds) $(opts)

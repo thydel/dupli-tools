@@ -1,0 +1,92 @@
+#!/usr/bin/make -f
+
+MAKEFLAGS += -Rr
+SHELL != which bash
+.DEFAULT_GOAL := help
+
+self    := $(lastword $(MAKEFILE_LIST))
+$(self) := $(basename $(self))
+dupli   := $(notdir $(self))
+$(self):;
+
+cmds  := help raw size list sets fulls
+opts  := short newer info verb debug
+
+weeks ?= 12
+
+see := See $(dupli) help
+
+error.1.tst := $(filter-out $(opts) $(cmds), $(MAKECMDGOALS))
+error.1.msg := $(dupli): $(error.1.tst) is neither an option nor a command. $(see)
+errors += 1
+
+error.2.tst := $(if $(filter $(opts), $(MAKECMDGOALS)),$(if $(filter $(cmds), $(MAKECMDGOALS)),,T))
+error.2.msg := $(dupli): option whithout command. $(see)
+errors += 2
+
+error.3.tst := $(if $(filter $(filter-out help, $(cmds)), $(MAKECMDGOALS)),$(if $(set),,T))
+error.3.msg := $(dupli): argument "set" undefined. $(see)
+errors += 3
+
+$(foreach _,$(errors),$(if $(error.$_.tst),$(error $(error.$_.msg))))
+
+store    := /var/local/duplicity/store
+
+path     := $(store)/$(set)
+pattern  := duplicity-full.*.vol1.difftar.gpg
+lastkeep != date +%F -d '$(or $(days),$(weeks)) $(if $(day),day,weeks) ago'
+
+fulls = find $(path) -type f -name $(pattern) $(CMP) -newermt $(lastkeep)
+
+trace = $(and $(DEBUG), | tee -a ~/tmp/$(dupli)-trace)
+
+date  = $(fulls) $(trace)
+date += | xargs -r ls -t | head -1 | xargs -ri stat -c %Y {} $(trace)
+date += | xargs -ri echo expr {} $(if $(CMP),-,+) 1 | dash $(trace)
+
+find  = xargs -ri find $(path) -type f $(CMP) -newermt '@{}'
+files = $(date) | $(find)
+
+Short := sed -e 's;$(store)/;;'
+Info  := echo $(path) $(lastkeep) is $(weeks) weeks ago
+
+raw  = $(files)
+size = $(files) | xargs -r du -scBG | cut -f1 | tail -1 | tr '\n' '\t' | sed -e 's;G	; ;' | xargs -ri echo {}$(set)
+sets = $(files) | $(Short) | cut -d/ -f 1-2 | uniq
+list = $(files) | xargs -r ls -lt $(SHORT)
+
+$(cmds):; @$(INFO)$($@)
+
+short := SHORT := | $(Short)
+CMP   := !
+newer := CMP :=
+info  := INFO := $(Info);
+verb  := SHELL := $(SHELL) -v
+debug := DEBUG := T
+
+$(opts):; @: $(eval $($@))
+
+space :=
+space +=
+
+opts.help := $(foreach _,$(opts),[$_])
+cmds.help := $(subst $(space),|,$(cmds))
+
+define help
+echo
+echo '$(dupli) $(opts.help) $(cmds.help) set=<node>/<vol> [weeks=<n(12)>]'
+echo
+echo 'select files older (default) or "newer" (option) than the last full backup make <n> "weeks" ago (default 12)'
+echo
+echo 'use cmd "raw" for bare full path list'
+echo 'use cmd "list" for sorted "ls(1) -lt"'
+echo '         option "short" suppress store prefix'
+echo 'use cmd "size" to get the total size of selected files'
+echo 'use cmd "sets" to reduce output to <node>/<vol> when selected file set is not empty'
+echo 'use cmd "full" to see all full starting points'
+echo
+echo 'use option info to show <node>/<vol> and date for "weeks"'
+echo
+endef
+
+.PHONY: $(cmds) $(opts)

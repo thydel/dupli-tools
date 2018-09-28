@@ -1,0 +1,52 @@
+#!/usr/bin/make -f
+
+MAKEFLAGS += -Rrs
+SHELL != which bash
+.ONESHELL:
+.DEFAULT_GOAL := all
+
+self    := $(lastword $(MAKEFILE_LIST))
+$(self) := $(basename $(self))
+dupli   := $(notdir $(self))
+$(self):;
+
+dir   := /var/local/duplicity
+log    = $(dir)/log/rsync/$@
+lock  := $(dir)/lock/loop
+
+sleep ?= 2
+
+define loop
+set -eo pipefail;
+loop () {
+    local set="$${1:-set}";
+    while true;
+    do
+        local log=$(log)/$$(date +%s);
+	echo $$log;
+        date > $$log;
+        dupli sets list $$set | $(flock.opt) dupli sync $(time.opt) $(dry.opt) $(run.opt) main >> $$log;
+        date >> $$log;
+        sleep $(sleep)h;
+    done;
+}
+export -f loop;
+loop $@;
+endef
+
+sets := small medium big all
+$(sets):; $(loop)
+.PHONY: $(sets)
+
+time.opt  := time
+run.opt   := run
+flock.opt := flock $(lock)
+notime    := time.opt   :=
+norun     := run.opt    :=
+noflock   := flock.opt  :=
+dry       := dry.opt    := dry
+
+opts := notime dry norun noflock
+
+$(opts):; @: $(eval $($@))
+.PHONY : $(opts)

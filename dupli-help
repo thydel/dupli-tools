@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+
+MAKEFLAGS += -Rrs
+SHELL != which bash
+
+local ?= /usr/local
+etc   := $(local)/etc
+
+include $(etc)/dupli-common.mk
+
+define help
+$(foreach _, $(filter-out help, $(cmds)),echo dupli $_ help;)
+endef
+
+help:; @$($@)
+.PHONY: help

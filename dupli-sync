@@ -1,0 +1,84 @@
+#!/usr/bin/make -f
+
+MAKEFLAGS += -Rr
+SHELL != which bash
+.DEFAULT_GOAL := main
+
+self    := $(lastword $(MAKEFILE_LIST))
+$(self) := $(basename $(self))
+dupli   := $(notdir $(self))
+$(self):;
+
+include /etc/local/duply-local.mk
+$(if $(secondary.backup),,$(error $(dupli): secondary.backup undefined))
+
+opts := time dry run
+cmds := help main
+
+see := See $(dupli) help
+
+error.1.tst := $(filter-out $(opts) $(cmds), $(MAKECMDGOALS))
+error.1.msg := $(dupli): $(error.1.tst) is neither an option nor a command. $(see)
+errors += 1
+
+error.2.tst := $(if $(filter $(opts), $(MAKECMDGOALS)),$(if $(filter $(cmds), $(MAKECMDGOALS)),,T))
+error.2.msg := $(dupli): option whithout command. $(see)
+errors += 2
+
+$(foreach _,$(errors),$(if $(error.$_.tst),$(error $(error.$_.msg))))
+
+space :=
+space +=
+
+args := BWP
+BWP.def := seq 8 11
+
+BWD != $(BWP.def)
+BWP ?= $(BWD)
+BWL != echo $(subst $(space),+,$(patsubst %,2^%,$(BWP))) | bc
+
+BWP.syn  := BWP=<power of two exponent sequence("$(BWP)")>
+BWP.help := is used to compute bandwidth limit in KiB for rsync
+BWP.help += (eg. BWP="$$(seq 8 11)" gives 3840 KiB or 30720 Kibit)
+
+store      := /var/local/duplicity/store
+key        := /root/.ssh/duplicity-rsync
+
+rsync.ssh  := -e 'ssh -i $(key)'
+rsync.bwl  := --bwlimit=$(BWL)k
+rsync.args  = -avRP$(DRY) --no-i-r --delay-updates
+rsync       = $(if $(TIME),time) rsync "$(rsync.ssh)" $(rsync.bwl) $(rsync.args)
+rsync      += $(store)/./{} $(secondary.backup)::duplicity
+main        = xargs -i echo 'echo {}; echo; $(rsync); echo' $(RUN)
+
+$(cmds):; @$($@) $(opts.cmd)
+.PHONY: $(cmds)
+
+time := TIME := T
+dry  := DRY  := n
+run   = RUN  := | $(if $(TIME),time) dash |& cat
+
+$(opts):; @: $(eval $($@))
+
+opts.help := $(foreach _,$(opts),[$_])
+cmds.help := [$(subst $(space),|,$(cmds))]
+args.help := [$(foreach _,$(args),$($_.syn))]
+
+define help
+echo
+echo '$(dupli) $(opts.help) $(cmds.help) $(args.help)'
+echo
+echo 'read a list of volumes (<node>/<vol>) on stdin and generate rsync cmd lines'
+echo 'use cmd "main" to allow options'
+echo
+echo 'default to show generated lines'
+echo
+echo 'use option "dry" to get dry-run rsync'
+echo 'use option "time" to insert time wrapper'
+echo 'use option "run" to pipe exec generated lines'
+echo
+echo 'option time must precede option run'
+echo
+echo 'argument BWP $(BWP.help)'
+echo
+endef
