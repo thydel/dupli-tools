@@ -147,7 +147,8 @@ dupli sets list medium | xargs -i dupli files newer size set={} weeks=2
 ## Sync big sets to secondary backup using default bandwidth limit
 
 ```
-dupli sets list big | dupli-sync | dash
+dupli sets list big | dupli-sync dry run main  # dry run first
+dupli sets list big | dupli-sync time run main # wrapped with time
 ```
 
 ## Uses loop to continuously sync to secondary preventing concurrent running of different sets
