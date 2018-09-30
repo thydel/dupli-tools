@@ -36,7 +36,7 @@ path     := $(store)/$(set)
 pattern  := duplicity-full.*.vol1.difftar.gpg
 lastkeep != date +%F -d '$(or $(days),$(weeks)) $(if $(day),day,weeks) ago'
 
-fulls = find $(path) -type f -name $(pattern) $(CMP) -newermt $(lastkeep)
+fulls = find $(path) -type f -name '$(pattern)' $(CMP) -newermt $(lastkeep)
 
 trace = $(and $(DEBUG), | tee -a ~/tmp/$(dupli)-trace)
 
