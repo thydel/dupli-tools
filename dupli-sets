@@ -27,6 +27,12 @@ $(foreach _,$(errors),$(if $(error.$_.tst),$(error $(error.$_.msg))))
 
 store := /var/local/duplicity/store
 
+# https://github.com/proot-me/proot/issues/106
+hostname != hostname
+ifeq ($(hostname), backup2)
+export PROOT_NO_SECCOMP=1
+endif
+
 sets  = proot -w $(store) find -mindepth 2 -maxdepth 2 -type d
 sets += | proot -w $(store) xargs -r du -sBG | sort -n$(REV) | sed -e 's;G	./; ;'
 
