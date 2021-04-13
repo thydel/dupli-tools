@@ -25,7 +25,7 @@ loop () {
         local log=$(log)/$$(date +%s);
 	echo $$log;
         date > $$log;
-        dupli sets list $$set | $(flock.opt) dupli sync $(time.opt) $(dry.opt) $(run.opt) main >> $$log;
+        dupli sets list $$set | $(flock.opt) dupli sync $(time.opt) $(dry.opt) $(new.opt) $(run.opt) main >> $$log;
         date >> $$log;
         sleep $(sleep)h;
     done;
@@ -45,8 +45,9 @@ notime    := time.opt   :=
 norun     := run.opt    :=
 noflock   := flock.opt  :=
 dry       := dry.opt    := dry
+new       := new.opt    := new
 
-opts := notime dry norun noflock
+opts := notime dry norun noflock new
 
 $(opts):; @: $(eval $($@))
 .PHONY : $(opts)
