@@ -12,7 +12,7 @@ $(self):;
 include /etc/local/duply-local.mk
 $(if $(secondary.backup),,$(error $(dupli): secondary.backup undefined))
 
-opts := time dry run
+opts := time dry run new
 cmds := help main
 
 see := See $(dupli) help
@@ -44,11 +44,15 @@ BWP.help += (eg. BWP="$$(seq 8 11)" gives 3840 KiB or 30720 Kibit)
 store      := /var/local/duplicity/store
 key        := /root/.ssh/duplicity-rsync
 
+WEEKS ?= 2
+rsync.src.files.all := $(store)/./{}
+rsync.src.files.newer = dupli files newer rel weeks=$(WEEKS) set={} |
 rsync.ssh  := -e 'ssh -i $(key)'
 rsync.bwl  := --bwlimit=$(BWL)k
+rsync.src   = $(if $(NEW),--files-from=- $(store),$(rsync.src.files.all))
 rsync.args  = -avRP$(DRY) --no-i-r --delay-updates
-rsync       = $(if $(TIME),time) rsync "$(rsync.ssh)" $(rsync.bwl) $(rsync.args)
-rsync      += $(store)/./{} $(secondary.backup)::duplicity
+rsync       = $(if $(TIME),time) $(if $(NEW),$(rsync.src.files.newer)) rsync "$(rsync.ssh)" $(rsync.bwl) $(rsync.args)
+rsync      += $(rsync.src) $(secondary.backup)::duplicity
 main        = xargs -i echo 'echo {}; echo; $(rsync); echo' $(RUN)
 
 $(cmds):; @$($@) $(opts.cmd)
@@ -56,7 +60,8 @@ $(cmds):; @$($@) $(opts.cmd)
 
 time := TIME := T
 dry  := DRY  := n
-run   = RUN  := | $(if $(TIME),time) dash |& cat
+run   = RUN  := | $(if $(TIME),time) bash |& cat
+new  := NEW  := T
 
 $(opts):; @: $(eval $($@))
 
