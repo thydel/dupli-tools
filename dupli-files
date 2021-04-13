@@ -9,7 +9,7 @@ $(self) := $(basename $(self))
 dupli   := $(notdir $(self))
 $(self):;
 
-cmds  := help raw size list base fulls
+cmds  := help raw rel size list base fulls
 opts  := short newer info verb debug
 
 weeks ?= 12
@@ -51,6 +51,7 @@ Short := sed -e 's;$(store)/;;'
 Info  := echo $(path) $(lastkeep) is $(weeks) weeks ago
 
 raw  = $(files)
+rel  = $(files) | sed -e 's;$(store)/;;'
 size = $(files) | xargs -r du -scBG | cut -f1 | tail -1 | tr '\n' '\t' | sed -e 's;G	; ;' | xargs -ri echo {}$(set)
 base = $(files) | $(Short) | cut -d/ -f 1-2 | uniq
 list = $(files) | xargs -r ls -lt $(SHORT)
@@ -79,6 +80,7 @@ echo
 echo 'select files older (default) or "newer" (option) than the last full backup make <n> "weeks" ago (default 12)'
 echo
 echo 'use cmd "raw" for bare full path list'
+echo 'use cmd "rel" for bare realtive path list'
 echo 'use cmd "list" for sorted "ls(1) -lt"'
 echo '         option "short" suppress store prefix'
 echo 'use cmd "size" to get the total size of selected files'
