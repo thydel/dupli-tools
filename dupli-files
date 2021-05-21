@@ -55,7 +55,7 @@ rel  = $(files) | sed -e 's;$(store)/;;'
 size = $(files) | xargs -r du -scBG | cut -f1 | tail -1 | tr '\n' '\t' | sed -e 's;G	; ;' | xargs -ri echo {}$(set)
 base = $(files) | $(Short) | cut -d/ -f 1-2 | uniq
 list = $(files) | xargs -r ls -lt $(SHORT)
-del  = $(files) | xargs -r $(DRY) rm
+del  = $(files) | xargs -r $(DRY) rm -v
 
 $(cmds):; @$(INFO)$($@)
 
