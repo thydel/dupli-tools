@@ -14,7 +14,8 @@ dir   := /var/local/duplicity
 log   := $(dir)/log/$(dupli)
 lock  := $(dir)/lock/$(dupli)
 
-# Weeks
+max-used ?= 95
+
 small ?= $(or $(weeks),3)
 medium ?= $(or $(weeks),3)
 big ?= $(or $(weeks),3)
@@ -27,13 +28,16 @@ loop () {
     local set="$$1";
     local weeks="$$2";
     while true; do
-        local log=$(log)/$$set/$$(date +%s);
-        echo $$log;
-        date > $$log;
-        dupli sets list $$set | $(flock.opt) xargs -i dupli files $(dry.opt) del weeks=$$weeks set={} >> $$log ;
-        date >> $$log;
+        local used=$$(df --output=pcent $(dir) | tr -cd '[:digit:]');
+        if test "$$used" -gt "$(max-used)"; then
+            local log=$(log)/$$set/$$(date +%s);
+            echo $$log;
+            date > $$log;
+            dupli sets list $$set | $(flock.opt) xargs -i dupli files $(dry.opt) del weeks=$$weeks set={} >> $$log;
+            date >> $$log;
+        fi;
         sleep $(sleep)h;
-done;
+    done;
 }
 export -f loop;
 loop $@ $($@);
