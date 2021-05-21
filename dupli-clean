@@ -1,0 +1,52 @@
+#!/usr/bin/make -f
+
+MAKEFLAGS += -Rrs
+SHELL != which bash
+.ONESHELL:
+.DEFAULT_GOAL := all
+
+self    := $(lastword $(MAKEFILE_LIST))
+$(self) := $(basename $(self))
+dupli   := $(notdir $(self))
+$(self):;
+
+dir   := /var/local/duplicity
+log    = $(dir)/log/$(self)/$@
+lock  := $(dir)/lock/$(self)
+
+# Weeks
+small ?= 3
+medium ?= 3
+big ?= 3
+
+sleep ?= 2
+
+define loop
+set -eo pipefail;
+loop () {
+    local set="$$1";
+    local weeks="$$2";
+    while true; do
+        local log=$(log)/$$(date +%s);
+	echo $$log;
+        date > $$log;
+	dupli sets list $$set | tee $$log | $(flock.opt) xargs -i dupli files $(dry.opt) del weeks=$$weeks set={};
+        date >> $$log;
+    done;
+}
+export -f loop;
+loop $@ $($@);
+endef
+
+sets := small medium big all
+$(sets):; $(loop)
+.PHONY: $(sets)
+
+flock.opt := flock $(lock)
+noflock   := flock.opt  :=
+dry       := dry.opt    := dry
+
+opts := dry noflock
+
+$(opts):; @: $(eval $($@))
+.PHONY : $(opts)

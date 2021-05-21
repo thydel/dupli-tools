@@ -1,2 +1,2 @@
-cmds := help sets files sync loop
+cmds := help sets files sync loop clean
 etcs := common
