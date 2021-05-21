@@ -9,8 +9,8 @@ $(self) := $(basename $(self))
 dupli   := $(notdir $(self))
 $(self):;
 
-cmds  := help raw rel size list base fulls
-opts  := short newer info verb debug
+cmds  := help raw rel size list base fulls del
+opts  := short newer info verb debug dry
 
 weeks ?= 12
 
@@ -55,6 +55,7 @@ rel  = $(files) | sed -e 's;$(store)/;;'
 size = $(files) | xargs -r du -scBG | cut -f1 | tail -1 | tr '\n' '\t' | sed -e 's;G	; ;' | xargs -ri echo {}$(set)
 base = $(files) | $(Short) | cut -d/ -f 1-2 | uniq
 list = $(files) | xargs -r ls -lt $(SHORT)
+del  = $(files) | xargs -r $(DRY) rm
 
 $(cmds):; @$(INFO)$($@)
 
@@ -64,6 +65,7 @@ newer := CMP :=
 info  := INFO := $(Info);
 verb  := SHELL := $(SHELL) -v
 debug := DEBUG := T
+dry   := DRY := echo
 
 $(opts):; @: $(eval $($@))
 
@@ -85,7 +87,9 @@ echo 'use cmd "list" for sorted "ls(1) -lt"'
 echo '         option "short" suppress store prefix'
 echo 'use cmd "size" to get the total size of selected files'
 echo 'use cmd "base" to reduce output to <node>/<vol> when selected file set is not empty'
-echo 'use cmd "full" to see all full starting points'
+echo 'use cmd "fulls" to see all full starting points'
+echo 'use cmd "del" to delete the selected files'
+echo '        option "dry" echo instead of delete'
 echo
 echo 'use option info to show <node>/<vol> and date for "weeks"'
 echo
