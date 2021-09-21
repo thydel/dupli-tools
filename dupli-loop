@@ -11,7 +11,7 @@ dupli   := $(notdir $(self))
 $(self):;
 
 dir   := /var/local/duplicity
-log    = $(dir)/log/rsync/$@
+log    = $(dir)/log/$(dupli)/loop-$@
 lock  := $(dir)/lock/loop
 
 sleep ?= 2
