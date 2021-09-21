@@ -30,7 +30,7 @@ loop () {
     while true; do
         local used=$$(df --output=pcent $(dir) | tr -cd '[:digit:]');
         if test "$$used" -gt "$(max-used)"; then
-            local log=$(log)/$$set/$$(date +%s);
+            local log=$(log)/clean-$$set/$$(date +%s);
             echo $$log;
             date > $$log;
             dupli sets list $$set | $(flock.opt) xargs -i dupli files $(dry.opt) del weeks=$$weeks set={} >> $$log;
@@ -47,7 +47,7 @@ sets := small medium big all
 $(sets): % : | $(log)/%; $(loop)
 .PHONY: $(sets)
 
-$(sets:%=$(log)/%):; mkdir -p $@
+$(sets:%=$(log)/%):; mkdir -p $(@D)/clean-$(@F)
 
 flock.opt := flock $(lock)
 noflock   := flock.opt  :=
