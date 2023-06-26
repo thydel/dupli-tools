@@ -27,8 +27,12 @@ errors += 2
 
 $(foreach _,$(errors),$(if $(error.$_.tst),$(error $(error.$_.msg))))
 
+# Work no mode with recent version
+ifdef NEVER
 space :=
 space +=
+endif
+space := $(or ) $(or )
 
 args := BWP
 BWP.def := seq 8 11
